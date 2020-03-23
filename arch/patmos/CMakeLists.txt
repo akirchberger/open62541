@@ -4,6 +4,8 @@ ua_add_architecture("patmos")
 
 if("${UA_ARCHITECTURE}" STREQUAL "patmos")
 
+ua_architecture_add_definitions(-Wno-error)
+
 ua_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 ua_add_architecture_file(${CMAKE_CURRENT_SOURCE_DIR}/ua_clock.c)
 ua_add_architecture_file(${CMAKE_CURRENT_SOURCE_DIR}/ua_architecture_functions.c)

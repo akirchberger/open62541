@@ -11,8 +11,40 @@ void UA_deinitialize_architecture_network(void){
   return;
 }
 
+int UA_sleep_ms(unsigned int miliSeconds)
+{
 
+}
 
+int gethostname_ecos(char* name, size_t len){
+    return 0;
+}
+
+int UA_getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen){
+    return 0;
+}
+
+int accept(UA_SOCKET sockfd, struct sockaddr *addr, socklen_t *addrlen)
+{
+    return 0;
+}
+
+int listen(UA_SOCKET sockfd, int backlog){
+    return 0;
+}
+
+unsigned int UA_socket_set_blocking(UA_SOCKET sockfd){
+    return 0;
+}
+
+unsigned int UA_socket_set_nonblocking(UA_SOCKET sockfd){
+    return 0;
+}
+
+int connect(int sockfd, const struct sockaddr *addr,
+                   socklen_t addrlen){
+   return 0;
+}
 
 int socket(int domain, int type, int protocol){
     return 0;
@@ -23,6 +55,10 @@ int setsockopt(int sockfd, int level, int optname,
 }
 int bind(int sockfd, const struct sockaddr *addr,
                 socklen_t addrlen){
+    return 0;
+}
+
+int UA_shutdown(UA_SOCKET sockfd, int how){
     return 0;
 }
 
@@ -125,6 +161,10 @@ __uint32_t htonl(__uint32_t v) {
 
 __uint32_t ntohl(__uint32_t v) {
   return htonl(v);
+}
+
+__uint16_t ntohs(__uint16_t v) {
+  return htons(v);
 }
 
 #endif /* UA_ARCHITECTURE_PATMOS */
