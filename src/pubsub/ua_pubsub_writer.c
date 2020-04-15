@@ -1869,7 +1869,11 @@ generateNetworkMessage(UA_PubSubConnection *connection, UA_WriterGroup *wg,
     networkMessage->networkMessageType = UA_NETWORKMESSAGE_DATASET;
     if(connection->config->publisherIdType == UA_PUBSUB_PUBLISHERID_NUMERIC) {
         networkMessage->publisherIdType = UA_PUBLISHERDATATYPE_UINT16;
+#ifdef UA_ARCHITECTURE_PATMOS // Patmos workaround for puplisher id
+        networkMessage->publisherId.publisherIdUInt16 = connection->config->publisherId.numeric;
+#else
         networkMessage->publisherId.publisherIdUInt32 = connection->config->publisherId.numeric;
+#endif
     } else if(connection->config->publisherIdType == UA_PUBSUB_PUBLISHERID_STRING){
         networkMessage->publisherIdType = UA_PUBLISHERDATATYPE_STRING;
         networkMessage->publisherId.publisherIdString = connection->config->publisherId.string;
