@@ -62,6 +62,7 @@ typedef struct {
 
 static UA_INLINE UA_FORMAT(3,4) void
 UA_LOG_TRACE(const UA_Logger *logger, UA_LogCategory category, const char *msg, ...) {
+#ifndef UA_PATMOS_WCET
 #if UA_LOGLEVEL <= 100
     if(!logger || !logger->log)
         return;
@@ -73,10 +74,12 @@ UA_LOG_TRACE(const UA_Logger *logger, UA_LogCategory category, const char *msg, 
     (void) category;
     (void) msg;
 #endif
+#endif // UA_PATMOS_WCET
 }
 
 static UA_INLINE UA_FORMAT(3,4) void
 UA_LOG_DEBUG(const UA_Logger *logger, UA_LogCategory category, const char *msg, ...) {
+#ifndef UA_PATMOS_WCET
 #if UA_LOGLEVEL <= 200
     if(!logger || !logger->log)
         return;
@@ -88,10 +91,12 @@ UA_LOG_DEBUG(const UA_Logger *logger, UA_LogCategory category, const char *msg, 
     (void) category;
     (void) msg;
 #endif
+#endif // UA_PATMOS_WCET
 }
 
 static UA_INLINE UA_FORMAT(3,4) void
 UA_LOG_INFO(const UA_Logger *logger, UA_LogCategory category, const char *msg, ...) {
+#ifndef UA_PATMOS_WCET
 #if UA_LOGLEVEL <= 300
     if(!logger || !logger->log)
         return;
@@ -103,10 +108,12 @@ UA_LOG_INFO(const UA_Logger *logger, UA_LogCategory category, const char *msg, .
     (void) category;
     (void) msg;
 #endif
+#endif // UA_PATMOS_WCET
 }
 
 static UA_INLINE UA_FORMAT(3,4) void
 UA_LOG_WARNING(const UA_Logger *logger, UA_LogCategory category, const char *msg, ...) {
+#ifndef UA_PATMOS_WCET
 #if UA_LOGLEVEL <= 400
     if(!logger || !logger->log)
         return;
@@ -118,10 +125,12 @@ UA_LOG_WARNING(const UA_Logger *logger, UA_LogCategory category, const char *msg
     (void) category;
     (void) msg;
 #endif
+#endif // UA_PATMOS_WCET
 }
 
 static UA_INLINE UA_FORMAT(3,4) void
 UA_LOG_ERROR(const UA_Logger *logger, UA_LogCategory category, const char *msg, ...) {
+#ifndef UA_PATMOS_WCET
 #if UA_LOGLEVEL <= 500
     if(!logger || !logger->log)
         return;
@@ -133,10 +142,12 @@ UA_LOG_ERROR(const UA_Logger *logger, UA_LogCategory category, const char *msg, 
     (void) category;
     (void) msg;
 #endif
+#endif // UA_PATMOS_WCET
 }
 
 static UA_INLINE UA_FORMAT(3,4) void
 UA_LOG_FATAL(const UA_Logger *logger, UA_LogCategory category, const char *msg, ...) {
+#ifndef UA_PATMOS_WCET
 #if UA_LOGLEVEL <= 600
     if(!logger || !logger->log)
         return;
@@ -148,6 +159,7 @@ UA_LOG_FATAL(const UA_Logger *logger, UA_LogCategory category, const char *msg, 
     (void) category;
     (void) msg;
 #endif
+#endif // UA_PATMOS_WCET
 }
 
 _UA_END_DECLS

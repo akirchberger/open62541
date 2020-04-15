@@ -143,6 +143,7 @@ option(UA_ENABLE_PARSING "Utility functions that require parsing (e.g. NodeId ex
 option(UA_ENABLE_DA "Enable OPC UA DataAccess (Part 8) definitions" ON)
 option(UA_ENABLE_MICRO_EMB_DEV_PROFILE "Builds CTT Compliant Micro Embedded Device Server Profile" OFF)
 option(UA_ENABLE_WEBSOCKET_SERVER "Enable websocket support (uses libwebsockets)" OFF)
+option(UA_PATMOS_WCET "Enable Patmos WCET" OFF)
 
 # security provider 
 if(UA_ENABLE_ENCRYPTION)

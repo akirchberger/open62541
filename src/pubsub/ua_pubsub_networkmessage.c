@@ -55,6 +55,9 @@ static UA_Boolean UA_DataSetMessageHeader_DataSetFlags2Enabled(const UA_DataSetM
 UA_StatusCode
 UA_NetworkMessage_updateBufferedMessage(UA_NetworkMessageOffsetBuffer *buffer){
     UA_StatusCode rv = UA_STATUSCODE_GOOD;
+#ifndef UA_PATMOS_WCET
+    _Pragma("loopbound min 0 max 64")
+#endif // UA_PATMOS_WCET
     for (size_t i = 0; i < buffer->offsetsSize; ++i) {
         const UA_Byte *bufEnd = &buffer->buffer.data[buffer->buffer.length];
         UA_Byte *bufPos = &buffer->buffer.data[buffer->offsets[i].offset];

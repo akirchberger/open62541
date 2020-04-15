@@ -99,7 +99,15 @@ static status
 encodeWithExchangeBuffer(const void *ptr, const UA_DataType *type, Ctx *ctx) {
     u8 *oldpos = ctx->pos; /* Last known good position */
     ctx->oldpos = &oldpos;
-    status ret = encodeBinaryJumpTable[type->typeKind](ptr, type, ctx);
+    //printf("type->typeKind %i\n", type->typeKind);
+    status ret = UA_STATUSCODE_GOOD;
+    if(type->typeKind == 2) ret = encodeBinaryJumpTable[2](ptr, type, ctx); // Byte_encodeBinary
+    if(type->typeKind == 4) ret = encodeBinaryJumpTable[4](ptr, type, ctx); // UInt16_encodeBinary
+    if(type->typeKind == 6) ret = encodeBinaryJumpTable[6](ptr, type, ctx); // UInt32_encodeBinary
+    if(type->typeKind == 12) ret = encodeBinaryJumpTable[12](ptr, type, ctx); // UInt64_encodeBinary
+    if(type->typeKind == 23) ret = encodeBinaryJumpTable[23](ptr, type, ctx); // Variant_encodeBinary
+    //status ret = encodeBinaryJumpTable[type->typeKind](ptr, type, ctx);
+#ifndef UA_PATMOS_WCET
     if(ret == UA_STATUSCODE_BADENCODINGLIMITSEXCEEDED && ctx->oldpos == &oldpos) {
         ctx->pos = oldpos; /* Send the position to the last known good position
                             * and switch */
@@ -108,6 +116,7 @@ encodeWithExchangeBuffer(const void *ptr, const UA_DataType *type, Ctx *ctx) {
             return ret;
         ret = encodeBinaryJumpTable[type->typeKind](ptr, type, ctx);
     }
+#endif
     return ret;
 }
 
@@ -1015,7 +1024,7 @@ ENCODE_BINARY(Variant) {
     status ret = ENCODE_DIRECT(&encoding, Byte);
     if(ret != UA_STATUSCODE_GOOD)
         return ret;
-
+#ifndef UA_PATMOS_WCET
     /* Encode the content */
     if(!isBuiltin && !isEnum)
         ret = Variant_encodeBinaryWrapExtensionObject(src, isArray, ctx);
@@ -1028,6 +1037,9 @@ ENCODE_BINARY(Variant) {
     if(hasDimensions && ret == UA_STATUSCODE_GOOD)
         ret = Array_encodeBinary(src->arrayDimensions, src->arrayDimensionsSize,
                                  &UA_TYPES[UA_TYPES_INT32], ctx);
+#else
+    //ret = encodeWithExchangeBuffer(src->data, src->type, ctx);  
+#endif // UA_PATMOS_WCET
     return ret;
 }
 

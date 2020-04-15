@@ -1991,6 +1991,7 @@ UA_WriterGroup_publishCallback(UA_Server *server, UA_WriterGroup *writerGroup) {
         return;
     }
 
+#ifndef UA_PATMOS_WCET
     /* How many DSM can be sent in one NM? */
     UA_Byte maxDSM = (UA_Byte)writerGroup->config.maxEncapsulatedDataSetMessageCount;
     if(writerGroup->config.maxEncapsulatedDataSetMessageCount > UA_BYTE_MAX)
@@ -2088,6 +2089,7 @@ UA_WriterGroup_publishCallback(UA_Server *server, UA_WriterGroup *writerGroup) {
     /* Clean up DSM */
     for(size_t i = 0; i < dsmCount; i++)
         UA_DataSetMessage_free(&dsmStore[i]);
+#endif // UA_PATMOS_WCET
 }
 
 /* Add new publishCallback. The first execution is triggered directly after
