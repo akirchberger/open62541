@@ -342,6 +342,9 @@ UA_PubSubChannelUDPMC_send(UA_PubSubChannel *channel, UA_ExtensionObject *transp
     }
     //TODO evalute: chunk messages or check against MTU?
     long nWritten = 0;
+#ifdef UA_PATMOS_WCET
+    _Pragma("loopbound min 1 max 1")
+#endif // UA_PATMOS_WCET
     while (nWritten < (long)buf->length) {
         long n = (long)UA_sendto(channel->sockfd, buf->data, buf->length, 0,
                         (struct sockaddr *) channelConfigUDPMC->ai_addr, sizeof(struct sockaddr_storage));
@@ -349,6 +352,9 @@ UA_PubSubChannelUDPMC_send(UA_PubSubChannel *channel, UA_ExtensionObject *transp
             UA_LOG_WARNING(UA_Log_Stdout, UA_LOGCATEGORY_SERVER, "PubSub Connection sending failed.");
             return UA_STATUSCODE_BADINTERNALERROR;
         }
+#ifdef UA_PATMOS_WCET
+        if(nWritten != (long)buf->length) return UA_STATUSCODE_BADINTERNALERROR;
+#endif // UA_PATMOS_WCET
         nWritten += n;
     }
     return UA_STATUSCODE_GOOD;

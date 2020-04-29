@@ -99,6 +99,7 @@ static status
 encodeWithExchangeBuffer(const void *ptr, const UA_DataType *type, Ctx *ctx) {
     u8 *oldpos = ctx->pos; /* Last known good position */
     ctx->oldpos = &oldpos;
+#ifdef UA_PATMOS_WCET
     //printf("type->typeKind %i\n", type->typeKind);
     status ret = UA_STATUSCODE_GOOD;
     if(type->typeKind == 2) ret = encodeBinaryJumpTable[2](ptr, type, ctx); // Byte_encodeBinary
@@ -106,8 +107,9 @@ encodeWithExchangeBuffer(const void *ptr, const UA_DataType *type, Ctx *ctx) {
     if(type->typeKind == 6) ret = encodeBinaryJumpTable[6](ptr, type, ctx); // UInt32_encodeBinary
     if(type->typeKind == 12) ret = encodeBinaryJumpTable[12](ptr, type, ctx); // UInt64_encodeBinary
     if(type->typeKind == 23) ret = encodeBinaryJumpTable[23](ptr, type, ctx); // Variant_encodeBinary
-    //status ret = encodeBinaryJumpTable[type->typeKind](ptr, type, ctx);
-#ifndef UA_PATMOS_WCET
+
+#else
+    status ret = encodeBinaryJumpTable[type->typeKind](ptr, type, ctx);
     if(ret == UA_STATUSCODE_BADENCODINGLIMITSEXCEEDED && ctx->oldpos == &oldpos) {
         ctx->pos = oldpos; /* Send the position to the last known good position
                             * and switch */
@@ -1038,7 +1040,32 @@ ENCODE_BINARY(Variant) {
         ret = Array_encodeBinary(src->arrayDimensions, src->arrayDimensionsSize,
                                  &UA_TYPES[UA_TYPES_INT32], ctx);
 #else
-    //ret = encodeWithExchangeBuffer(src->data, src->type, ctx);  
+    /* Encode the content *//*
+    if(!isBuiltin && !isEnum)
+        ret = Variant_encodeBinaryWrapExtensionObject(src, isArray, ctx);
+    else if(!isArray)
+        ret = encodeWithExchangeBuffer(src->data, src->type, ctx);
+    else
+        ret = Array_encodeBinary(src->data, src->arrayLength, src->type, ctx);
+*/
+    if(!isBuiltin && !isEnum)
+        return UA_STATUSCODE_BADENCODINGERROR;
+    else if(!isArray)
+    {
+        if(src->type->typeKind == 6) ret = encodeBinaryJumpTable[6](src->data, src->type, ctx); // UInt32_encodeBinary
+        else return UA_STATUSCODE_BADENCODINGERROR;
+    }
+    else return UA_STATUSCODE_BADENCODINGERROR;
+
+    /* Encode the array dimensions */ /*
+    if(hasDimensions && ret == UA_STATUSCODE_GOOD)
+        ret = Array_encodeBinary(src->arrayDimensions, src->arrayDimensionsSize,
+                                 &UA_TYPES[UA_TYPES_INT32], ctx);*/
+
+    if(hasDimensions && ret == UA_STATUSCODE_GOOD)
+        return UA_STATUSCODE_BADENCODINGERROR;
+//printf("src->type %i length:%i isArray:%i\n", src->type->typeKind, src->arrayLength,isArray);
+//printf("src->type %i\n", src->type->typeKind);
 #endif // UA_PATMOS_WCET
     return ret;
 }

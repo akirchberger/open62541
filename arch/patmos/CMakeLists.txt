@@ -4,6 +4,8 @@ ua_add_architecture("patmos")
 
 if("${UA_ARCHITECTURE}" STREQUAL "patmos")
 
+option(UA_PATMOS_WCET "Enable Patmos WCET" OFF)
+
 ua_architecture_add_definitions(-Wno-error)
 
 ua_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
