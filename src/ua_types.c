@@ -139,7 +139,15 @@ String_copy(UA_String const *src, UA_String *dst, const UA_DataType *_) {
 
 static void
 String_clear(UA_String *s, const UA_DataType *_) {
+ #ifndef UA_PATMOS_WCET
     UA_Array_delete(s->data, s->length, &UA_TYPES[UA_TYPES_BYTE]);
+#else
+    void *p = s->data;
+    size_t size = s->length;
+    
+    UA_free((void*)((uintptr_t)p & ~(uintptr_t)UA_EMPTY_ARRAY_SENTINEL));
+#endif // UA_PATMOS_WCET
+
 }
 
 /* QualifiedName */
@@ -1132,7 +1140,11 @@ UA_clearSignature clearJumpTable[UA_DATATYPEKINDS] = {
 
 void
 UA_clear(void *p, const UA_DataType *type) {
+#ifndef UA_PATMOS_WCET
     clearJumpTable[type->typeKind](p, type);
+#else
+    if(type->typeKind == UA_DATATYPEKIND_BYTESTRING) String_clear(p, UA_DATATYPEKIND_BYTESTRING);
+#endif
     memset(p, 0, type->memSize); /* init */
 }
 
@@ -1198,6 +1210,9 @@ void
 UA_Array_delete(void *p, size_t size, const UA_DataType *type) {
     if(!type->pointerFree) {
         uintptr_t ptr = (uintptr_t)p;
+#ifdef UA_PATMOS_WCET
+    _Pragma("loopbound min 1 max 10")
+#endif // UA_PATMOS_WCET
         for(size_t i = 0; i < size; ++i) {
             UA_clear((void*)ptr, type);
             ptr += type->memSize;

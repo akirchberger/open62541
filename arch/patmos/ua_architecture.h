@@ -80,12 +80,17 @@
 #define SAME_AS(x)		(const char *)&errno_message[x]
 
 int udp_send_mac(unsigned int tx_addr, unsigned int rx_addr, unsigned char destination_mac[], unsigned char destination_ip[], unsigned short source_port, unsigned short destination_port, unsigned char data[], unsigned short data_length, long long timeout);
+unsigned eth_mac_receive_nb(unsigned int rx_addr);
 
+unsigned char udp_get_data(unsigned int pkt_addr, unsigned char data[], unsigned int data_length);
+unsigned short int udp_get_data_length(unsigned int pkt_addr);
+unsigned short int udp_get_destination_port(unsigned int pkt_addr);
 
-#define UA_free free
-#define UA_malloc malloc
-#define UA_calloc calloc
-#define UA_realloc realloc
+#define UA_free free_patmos
+#define UA_malloc malloc_patmos
+#define UA_calloc calloc_patmos
+#define UA_realloc realloc_patmos
+#define UA_memset memset_patmos
 
 #define UA_snprintf snprintf
 

@@ -4,7 +4,7 @@ ua_add_architecture("patmos")
 
 if("${UA_ARCHITECTURE}" STREQUAL "patmos")
 
-option(UA_PATMOS_WCET "Enable Patmos WCET" OFF)
+option(UA_PATMOS_WCET "Enable Patmos WCET" ON)
 
 ua_architecture_add_definitions(-Wno-error)
 

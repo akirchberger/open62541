@@ -86,6 +86,9 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags)
 }
 
 #define BROADCAST_MAC (unsigned char[6]) {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF}
+#define OPCUA_PUBSUB_PORT 4840
+#define SRCPORT 1234
+
 ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
                const struct sockaddr *dest_addr, socklen_t addrlen)
 {
@@ -95,11 +98,8 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
     unsigned int tx_addr = 0x800;
     static unsigned char target_ip[4] = {224, 0, 0, 22};
 
-    #define PORT 4840
-    #define SRCPORT 1234
-
     //printf("send(%i bytes)\n", (int)len);
-    udp_send_mac(tx_addr, rx_addr, BROADCAST_MAC, target_ip, SRCPORT, PORT, (unsigned char *)buf, len, 10);
+    udp_send_mac(tx_addr, rx_addr, BROADCAST_MAC, target_ip, SRCPORT, OPCUA_PUBSUB_PORT, (unsigned char *)buf, len, 10);
     //arp_table_print();
 
     return len;
@@ -114,8 +114,47 @@ ssize_t recv(int sockfd, void *buf, size_t len, int flags)
 ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
                  struct sockaddr *src_addr, socklen_t *addrlen)
 {
-    printf("recvfrom(%i bytes)\n", (int)len);
-    return len;
+    size_t msg_length = -1;
+    //enum eth_protocol packet_type;
+
+    unsigned int rx_addr = 0x000;
+    unsigned int tx_addr = 0x800;
+
+    {
+        unsigned ret = eth_mac_receive_nb(rx_addr);
+        if(ret == 1)
+        {
+            unsigned char packet_type = mac_packet_type(rx_addr);
+
+            //printf("packet_type %i %i\n", packet_type, ret);
+            switch (packet_type) {
+                //case 6: //ARP
+                    //arp_process_received(rx_addr, tx_addr);
+                    //return -1;
+                case 3: //UDP
+                        //printf("DST_PORT %i\n", udp_get_destination_port(rx_addr));
+                    if( udp_get_destination_port(rx_addr)  == OPCUA_PUBSUB_PORT)
+                    {
+                        msg_length = udp_get_data_length(rx_addr);
+                        //printf("Message Length %i\n", msg_length);
+                        if(len >= msg_length)
+                        {
+                            udp_get_data(rx_addr, buf, msg_length);
+                        }
+                        else {
+                            return -1; 
+                        }
+                    }
+                    else
+                        return -1; 
+                    break;
+                default:
+                    return -1;
+            }
+        }
+    }
+
+    return msg_length;
 }
 
 int getaddrinfo(const char *node, const char *service,
@@ -165,6 +204,132 @@ __uint32_t ntohl(__uint32_t v) {
 
 __uint16_t ntohs(__uint16_t v) {
   return htons(v);
+}
+
+#define MEMORY_DEBUG
+
+#define MEMORY_BLOCKS 32
+#define MEMORY_BLOCK_SIZE 512
+unsigned char memory[MEMORY_BLOCKS][MEMORY_BLOCK_SIZE];
+bool memory_free[MEMORY_BLOCKS]= {0};
+
+#ifdef MEMORY_DEBUG
+# define MEMORY_DEBUG_PRINT(x) printf x
+#else
+# define MEMORY_DEBUG_PRINT(x)
+#endif
+
+void print_memory_usage()
+{
+    for(int i=0;i<MEMORY_BLOCKS;i++)
+    {
+        MEMORY_DEBUG_PRINT(("%i", memory_free[i] ));
+    }
+    MEMORY_DEBUG_PRINT(("\n"));
+}
+
+void *malloc_patmos(size_t size)
+{
+    int i;
+    MEMORY_DEBUG_PRINT(("malloc(%i)\n", size));
+
+    if(size > MEMORY_BLOCK_SIZE)
+    {
+        MEMORY_DEBUG_PRINT(("malloc() memory limit exceeded!\n"));
+        return NULL;
+    }
+
+    _Pragma("loopbound min 1 max 32") // MEMORY_BLOCKS
+    for(i=0;i<MEMORY_BLOCKS;i++)
+    {
+        if(memory_free[i]==0) 
+        {
+            MEMORY_DEBUG_PRINT(("malloc() block number %i! %p\n", i, &memory[i][0]));
+            memory_free[i] = 1;
+
+            print_memory_usage();
+
+            return (void *)&memory[i][0];
+        }
+    }
+    MEMORY_DEBUG_PRINT(("malloc() no free memory block!\n"));
+    return NULL;
+}
+
+void *calloc_patmos(size_t nitems, size_t size)
+{
+    int i;
+    MEMORY_DEBUG_PRINT(("calloc(%i, %i)\n", nitems, size));
+
+    if(size*nitems > MEMORY_BLOCK_SIZE)
+    {
+        MEMORY_DEBUG_PRINT(("calloc() no free memory block!\n"));
+        return NULL;
+    }
+
+    _Pragma("loopbound min 1 max 32") // MEMORY_BLOCKS
+    for(i=0;i<MEMORY_BLOCKS;i++)
+    {
+        if(memory_free[i]==0) 
+        {
+            MEMORY_DEBUG_PRINT(("calloc() block number %i! %p\n", i, &memory[i][0]));
+            memory_free[i] = 1;
+
+            print_memory_usage();
+
+            return (void *)&memory[i][0];
+        }
+    }
+    MEMORY_DEBUG_PRINT(("calloc() no free memory block!\n"));
+    return NULL;
+}
+
+void *realloc_patmos(void *ptr, size_t size)
+{
+    MEMORY_DEBUG_PRINT(("realloc(%p, %i)\n", ptr, size));
+
+    if(size > MEMORY_BLOCK_SIZE)
+    {
+        MEMORY_DEBUG_PRINT(("realloc() memory limit exceeded!\n"));
+        return NULL;
+    }
+}
+
+void free_patmos(void *p)
+{
+    int i;
+    MEMORY_DEBUG_PRINT(("free(%p)\n", p));
+
+    if(p == NULL) return;
+
+    _Pragma("loopbound min 1 max 32") // MEMORY_BLOCKS
+    for(i=0;i<MEMORY_BLOCKS;i++)
+    {
+        if( (void*)&memory[i][0] == p) 
+        {
+            MEMORY_DEBUG_PRINT(("free() block number %i!\n", i));
+            memory_free[i] = 0;
+
+            print_memory_usage();
+
+            return;
+        }
+    }
+    MEMORY_DEBUG_PRINT(("free() no matching block found!\n"));
+}
+
+void *memset_patmos(void *str, int c, size_t n)
+{
+    MEMORY_DEBUG_PRINT(("memset(%p, %i, %i)\n", str, c, n));
+
+    unsigned char *str_buffer = str;
+
+    _Pragma("loopbound min 1 max 512") // MEMORY_BLOCK_SIZE
+    for(int i=0;i<n;i++)
+    {
+        str_buffer[i] = c;
+    }
+    return str;
 }
 
 #endif /* UA_ARCHITECTURE_PATMOS */

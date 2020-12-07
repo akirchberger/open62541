@@ -14,15 +14,15 @@
 #define UA_DATETIME_UNIX_EPOCH (11644473600LL * UA_DATETIME_SEC)
 
 UA_DateTime UA_DateTime_now(void) {
-    printf("UA_DateTime_now");
+    //printf("UA_DateTime_now");
     return UA_DATETIME_UNIX_EPOCH;// + get_cpu_usecs()*60/UA_DATETIME_USEC; //us is 60Hz
 }
 UA_DateTime UA_DateTime_nowMonotonic(void) {
-    printf("UA_DateTime_nowMonotonic");
+    //printf("UA_DateTime_nowMonotonic");
     return 0;
 }
 UA_Int64 UA_DateTime_localTimeUtcOffset(void) {
-    printf("UA_DateTime_localTimeUtcOffset");
+    //printf("UA_DateTime_localTimeUtcOffset");
     return 0;
 }
 

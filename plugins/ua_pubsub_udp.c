@@ -374,6 +374,7 @@ UA_PubSubChannelUDPMC_receive(UA_PubSubChannel *channel, UA_ByteString *message,
     }
     UA_PubSubChannelDataUDPMC *channelConfigUDPMC = (UA_PubSubChannelDataUDPMC *) channel->handle;
 
+#ifndef UA_ARCHITECTURE_PATMOS
     if(timeout > 0) {
         fd_set fdset;
         FD_ZERO(&fdset);
@@ -391,8 +392,9 @@ UA_PubSubChannelUDPMC_receive(UA_PubSubChannel *channel, UA_ByteString *message,
             return UA_STATUSCODE_BADINTERNALERROR;
         }
     }
+#endif
 
-    if(channelConfigUDPMC->ai_family == PF_INET){
+    //if(channelConfigUDPMC->ai_family == PF_INET){
         ssize_t messageLength;
         messageLength = UA_recvfrom(channel->sockfd, message->data, message->length, 0, NULL, NULL);
         if(messageLength > 0){
@@ -404,7 +406,7 @@ UA_PubSubChannelUDPMC_receive(UA_PubSubChannel *channel, UA_ByteString *message,
     } else {
         //TODO implement recieve for IPv6
 #endif
-    }
+    //}
     return UA_STATUSCODE_GOOD;
 }
 
