@@ -6,6 +6,7 @@
 #ifdef UA_ARCHITECTURE_PATMOS
 
 #include <open62541/types.h>
+#include <mac.h>
 
 void UA_deinitialize_architecture_network(void){
   return;
