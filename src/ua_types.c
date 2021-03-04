@@ -512,6 +512,11 @@ ExtensionObject_copy(UA_ExtensionObject const *src, UA_ExtensionObject *dst,
     return retval;
 }
 
+#ifdef UA_PATMOS_WCET
+static void
+DataValue_clear(UA_DataValue *p, const UA_DataType *_);
+#endif // UA_PATMOS_WCET
+
 /* Variant */
 static void
 Variant_clear(UA_Variant *p, const UA_DataType *_) {
@@ -520,7 +525,17 @@ Variant_clear(UA_Variant *p, const UA_DataType *_) {
     if(p->type && p->data > UA_EMPTY_ARRAY_SENTINEL) {
         if(p->arrayLength == 0)
             p->arrayLength = 1;
+    #ifdef UA_PATMOS_WCET
+        //if(p_value->type->typeKind == UA_DATATYPEKIND_DATAVALUE) DataValue_clear(ptr, UA_DATATYPEKIND_DATAVALUE); //22
+            uintptr_t ptr = (uintptr_t)p;
+            UA_DataValue *p_datavalue = ptr;
+            UA_Variant *p_variant = &p_datavalue->value;
+
+            if(p_variant->type->pointerFree) UA_free((void*)((uintptr_t)p_variant->data & ~(uintptr_t)UA_EMPTY_ARRAY_SENTINEL));
+
+    #else
         UA_Array_delete(p->data, p->arrayLength, p->type);
+    #endif // UA_PATMOS_WCET
         p->data = NULL;
     }
     if((void*)p->arrayDimensions > UA_EMPTY_ARRAY_SENTINEL)
@@ -1142,10 +1157,13 @@ void
 UA_clear(void *p, const UA_DataType *type) {
 #ifndef UA_PATMOS_WCET
     clearJumpTable[type->typeKind](p, type);
+    memset(p, 0, type->memSize); /* init */
 #else
     if(type->typeKind == UA_DATATYPEKIND_BYTESTRING) String_clear(p, UA_DATATYPEKIND_BYTESTRING);
+    else if(type->typeKind == UA_DATATYPEKIND_DATAVALUE) DataValue_clear(p, UA_DATATYPEKIND_DATAVALUE);
+    else if(type->typeKind == UA_DATATYPEKIND_VARIANT) Variant_clear(p, UA_DATATYPEKIND_VARIANT);
+    UA_memset(p, 0, type->memSize); /* init */
 #endif
-    memset(p, 0, type->memSize); /* init */
 }
 
 void
@@ -1210,13 +1228,18 @@ void
 UA_Array_delete(void *p, size_t size, const UA_DataType *type) {
     if(!type->pointerFree) {
         uintptr_t ptr = (uintptr_t)p;
-#ifdef UA_PATMOS_WCET
-    _Pragma("loopbound min 1 max 10")
-#endif // UA_PATMOS_WCET
+    #ifdef UA_PATMOS_WCET   
+        _Pragma("loopbound min 1 max 1")
+        for(size_t i = 0; i < size; ++i) {
+            if(type->typeKind == UA_DATATYPEKIND_DATAVALUE) DataValue_clear(ptr, UA_DATATYPEKIND_DATAVALUE); //22
+            ptr += type->memSize;
+        }
+    #else
         for(size_t i = 0; i < size; ++i) {
             UA_clear((void*)ptr, type);
             ptr += type->memSize;
         }
+    #endif // UA_PATMOS_WCET
     }
     UA_free((void*)((uintptr_t)p & ~(uintptr_t)UA_EMPTY_ARRAY_SENTINEL));
 }

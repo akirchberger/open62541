@@ -23,6 +23,18 @@
 #include <stdio.h>
 //#include <open62541/types.h>
 
+#include <machine/spm.h>
+
+#define PATMOS_IO_LED      0xf0090000
+#define LEDS *((volatile _SPM unsigned int *) (PATMOS_IO_LED))
+
+#define PUBLISH_LED_BIT	    0
+#define ENCODE_LED_BIT	    1
+#define UDP_SEND_LED_BIT	2
+
+#define SUBSCRIBE_LED_BIT	0
+#define UDP_RECV_LED_BIT	1
+#define DECODE_LED_BIT	    2
 
 #define	IPPROTO_IP		0
 #define	IP_ADD_MEMBERSHIP	5

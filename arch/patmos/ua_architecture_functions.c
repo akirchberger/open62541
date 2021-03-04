@@ -139,7 +139,10 @@ ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
                         //printf("Message Length %i\n", msg_length);
                         if(len >= msg_length)
                         {
+                            LEDS |= (1U << UDP_RECV_LED_BIT);
                             udp_get_data(rx_addr, buf, msg_length);
+                            LEDS &= ~( (1U << UDP_RECV_LED_BIT) );
+                            LEDS |= (1U << DECODE_LED_BIT);
                         }
                         else {
                             return -1; 
@@ -151,6 +154,9 @@ ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
                 default:
                     return -1;
             }
+        }
+        else
+        {
         }
     }
 
@@ -206,12 +212,12 @@ __uint16_t ntohs(__uint16_t v) {
   return htons(v);
 }
 
-#define MEMORY_DEBUG
+//#define MEMORY_DEBUG
 
 #define MEMORY_BLOCKS 32
-#define MEMORY_BLOCK_SIZE 512
+#define MEMORY_BLOCK_SIZE 256
 unsigned char memory[MEMORY_BLOCKS][MEMORY_BLOCK_SIZE];
-bool memory_free[MEMORY_BLOCKS]= {0};
+bool memory_used[MEMORY_BLOCKS]= {0};
 
 #ifdef MEMORY_DEBUG
 # define MEMORY_DEBUG_PRINT(x) printf x
@@ -223,7 +229,7 @@ void print_memory_usage()
 {
     for(int i=0;i<MEMORY_BLOCKS;i++)
     {
-        MEMORY_DEBUG_PRINT(("%i", memory_free[i] ));
+        MEMORY_DEBUG_PRINT(("%i", memory_used[i] ));
     }
     MEMORY_DEBUG_PRINT(("\n"));
 }
@@ -242,12 +248,12 @@ void *malloc_patmos(size_t size)
     _Pragma("loopbound min 1 max 32") // MEMORY_BLOCKS
     for(i=0;i<MEMORY_BLOCKS;i++)
     {
-        if(memory_free[i]==0) 
+        if(memory_used[i]==0) 
         {
             MEMORY_DEBUG_PRINT(("malloc() block number %i! %p\n", i, &memory[i][0]));
-            memory_free[i] = 1;
+            memory_used[i] = 1;
 
-            print_memory_usage();
+            //print_memory_usage();
 
             return (void *)&memory[i][0];
         }
@@ -270,12 +276,12 @@ void *calloc_patmos(size_t nitems, size_t size)
     _Pragma("loopbound min 1 max 32") // MEMORY_BLOCKS
     for(i=0;i<MEMORY_BLOCKS;i++)
     {
-        if(memory_free[i]==0) 
+        if(memory_used[i]==0) 
         {
             MEMORY_DEBUG_PRINT(("calloc() block number %i! %p\n", i, &memory[i][0]));
-            memory_free[i] = 1;
+            memory_used[i] = 1;
 
-            print_memory_usage();
+            //print_memory_usage();
 
             return (void *)&memory[i][0];
         }
@@ -308,9 +314,9 @@ void free_patmos(void *p)
         if( (void*)&memory[i][0] == p) 
         {
             MEMORY_DEBUG_PRINT(("free() block number %i!\n", i));
-            memory_free[i] = 0;
+            memory_used[i] = 0;
 
-            print_memory_usage();
+            //print_memory_usage();
 
             return;
         }
@@ -324,7 +330,7 @@ void *memset_patmos(void *str, int c, size_t n)
 
     unsigned char *str_buffer = str;
 
-    _Pragma("loopbound min 1 max 512") // MEMORY_BLOCK_SIZE
+    _Pragma("loopbound min 1 max 32") // MEMORY_BLOCK_SIZE
     for(int i=0;i<n;i++)
     {
         str_buffer[i] = c;

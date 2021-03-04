@@ -127,7 +127,7 @@ encodeWithExchangeBuffer(const void *ptr, const UA_DataType *type, Ctx *ctx) {
     //if(type->typeKind == UA_DATATYPEKIND_DATAVALUE) ret = encodeBinaryJumpTable[UA_DATATYPEKIND_DATAVALUE](ptr, type, ctx);
     //if(type->typeKind == UA_DATATYPEKIND_VARIANT) ret = encodeBinaryJumpTable[UA_DATATYPEKIND_VARIANT](ptr, type, ctx);
     //if(type->typeKind == UA_DATATYPEKIND_DIAGNOSTICINFO) ret = encodeBinaryJumpTable[UA_DATATYPEKIND_DIAGNOSTICINFO](ptr, type, ctx);
-    //if(type->typeKind == UA_DATATYPEKIND_DECIMAL) ret = encodeBinaryJumpTable[UA_DATATYPEKIND_DECIMAL](ptr, type, ctx);
+    if(type->typeKind == UA_DATATYPEKIND_DECIMAL) ret = encodeBinaryJumpTable[UA_DATATYPEKIND_DECIMAL](ptr, type, ctx);
     if(type->typeKind == UA_DATATYPEKIND_ENUM) ret = encodeBinaryJumpTable[UA_DATATYPEKIND_ENUM](ptr, type, ctx);
     //if(type->typeKind == UA_DATATYPEKIND_STRUCTURE) ret = encodeBinaryJumpTable[UA_DATATYPEKIND_STRUCTURE](ptr, type, ctx);
     if(type->typeKind == UA_DATATYPEKIND_OPTSTRUCT) ret = encodeBinaryJumpTable[UA_DATATYPEKIND_OPTSTRUCT](ptr, type, ctx);
@@ -484,7 +484,7 @@ Array_encodeBinaryComplex(uintptr_t ptr, size_t length,
                           const UA_DataType *type, Ctx *ctx) {
     /* Encode every element */
     #if 1==0
-        _Pragma("loopbound min 1 max 100")
+        _Pragma("loopbound min 1 max 10")
     #endif // UA_PATMOS_WCET
     for(size_t i = 0; i < length; ++i) {
         //#ifdef UA_PATMOS_WCET
@@ -1647,15 +1647,16 @@ UA_decodeBinary(const UA_ByteString *src, size_t *offset, void *dst,
     ctx.customTypes = customTypes;
 
     /* Decode */
-    memset(dst, 0, type->memSize); /* Initialize the value */
 #ifdef UA_PATMOS_WCET
-    status ret = UA_STATUSCODE_GOOD;
+    UA_memset(dst, 0, type->memSize); /* Initialize the value */
+    status ret = UA_STATUSCODE_BADNOTIMPLEMENTED;
     if(type->typeKind == UA_DATATYPEKIND_BYTE) ret = decodeBinaryJumpTable[UA_DATATYPEKIND_BYTE](dst, type, &ctx);
     if(type->typeKind == UA_DATATYPEKIND_UINT16) ret = decodeBinaryJumpTable[UA_DATATYPEKIND_UINT16](dst, type, &ctx);
     if(type->typeKind == UA_DATATYPEKIND_UINT32) ret = decodeBinaryJumpTable[UA_DATATYPEKIND_UINT32](dst, type, &ctx);
     if(type->typeKind == UA_DATATYPEKIND_DATETIME) ret = decodeBinaryJumpTable[UA_DATATYPEKIND_DATETIME](dst, type, &ctx);
     if(type->typeKind == UA_DATATYPEKIND_VARIANT) ret = decodeBinaryJumpTable[UA_DATATYPEKIND_VARIANT](dst, type, &ctx);
 #else
+    memset(dst, 0, type->memSize); /* Initialize the value */
     status ret = decodeBinaryJumpTable[type->typeKind](dst, type, &ctx);
 #endif
 
@@ -1665,7 +1666,11 @@ UA_decodeBinary(const UA_ByteString *src, size_t *offset, void *dst,
     } else {
         /* Clean up */
         UA_clear(dst, type);
+#ifdef UA_PATMOS_WCET
+        UA_memset(dst, 0, type->memSize);
+#else
         memset(dst, 0, type->memSize);
+#endif
     }
     return ret;
 }
