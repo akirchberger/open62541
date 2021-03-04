@@ -98,6 +98,11 @@ unsigned char udp_get_data(unsigned int pkt_addr, unsigned char data[], unsigned
 unsigned short int udp_get_data_length(unsigned int pkt_addr);
 unsigned short int udp_get_destination_port(unsigned int pkt_addr);
 
+void *malloc_patmos(size_t size);  // custom WCET-analyzable version of malloc
+void *calloc_patmos(size_t nitems, size_t size); // custom WCET-analyzable version of calloc
+void *realloc_patmos(void *ptr, size_t size); // custom WCET-analyzable version of realloc
+void free_patmos(void *p); // custom WCET-analyzable version of free
+
 #define UA_free free_patmos
 #define UA_malloc malloc_patmos
 #define UA_calloc calloc_patmos
